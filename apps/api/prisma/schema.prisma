@@ -38,6 +38,7 @@ model Team {
   car          Car?
   pilots       Pilot[]
   ownedPilots  OwnedPilot[]                     // ← ÚJ: tulajdonolt pilóták
+  raceParticipations RaceParticipant[]  // ← ÚJ sor
 }
 
 model Car {
@@ -49,6 +50,7 @@ model Car {
   
   teamId      String @unique
   team        Team   @relation(fields: [teamId], references: [id])
+   raceParticipations RaceParticipant[]  // ← ÚJ sor
 }
 
 // Pilóták (módosítás)
@@ -70,6 +72,7 @@ model Pilot {
   
   auctions       AuctionPilot[]                 // ← ÚJ: aukciókban való részvétel
   ownedVersions  OwnedPilot[]                   // ← ÚJ: tulajdonolt verziók
+  raceParticipations RaceParticipant[]  // ← ÚJ sor
 }
 // ÚJ: Tulajdonolt pilóták (user inventory)
 model OwnedPilot {
@@ -115,7 +118,61 @@ model AuctionPilot {
   
   @@unique([auctionId, pilotId])
 }
+// Versenyek
+model Race {
+  id          String   @id @default(uuid())
+  name        String
+  track       String
+  weather     String   @default("DRY")    // DRY, WET, MIXED
+  temperature Int      @default(20)       // Celsius
+  laps        Int      @default(10)       // Rövid verseny
+  isActive    Boolean  @default(false)
+  startTime   DateTime?
+  endTime     DateTime?
+  
+  participants RaceParticipant[]
+  results      RaceResult[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
 
+// Verseny résztvevők
+model RaceParticipant {
+  id      String @id @default(uuid())
+  
+  raceId  String
+  race    Race   @relation(fields: [raceId], references: [id])
+  
+  teamId  String
+  team    Team   @relation(fields: [teamId], references: [id])
+  
+  pilotId String
+  pilot   Pilot  @relation(fields: [pilotId], references: [id])
+  
+  carId   String
+  car     Car    @relation(fields: [carId], references: [id])
+  
+  @@unique([raceId, teamId])  // Egy team csak egyszer vehet részt egy versenyen
+}
+
+// Verseny eredmények
+model RaceResult {
+  id          String @id @default(uuid())
+  position    Int
+  totalTime   Float              // másodpercben
+  lapTimes    Float[]            // minden kör ideje
+  dnf         Boolean @default(false)
+  dnfReason   String?            // "ENGINE_FAILURE", "CRASH", stb.
+  
+  raceId      String
+  race        Race   @relation(fields: [raceId], references: [id])
+  
+  teamId      String
+  pilotId     String
+  
+  createdAt   DateTime @default(now())
+}
 // ÚJ: Licitálások
 model Bid {
   id          String   @id @default(uuid())

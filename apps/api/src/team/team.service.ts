@@ -15,6 +15,7 @@ export class TeamService {
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
+      // Csapat létrehozása
       const team = await tx.team.create({
         data: {
           name: createTeamDto.name,
@@ -25,6 +26,7 @@ export class TeamService {
         },
       });
 
+      // Autó létrehozása
       const car = await tx.car.create({
         data: {
           engine: 50,
@@ -35,9 +37,63 @@ export class TeamService {
         },
       });
 
-      return { team, car };
+      // 2 alapértelmezett pilóta létrehozása
+      const pilot1 = await tx.pilot.create({
+        data: {
+          name: `${createTeamDto.name} Driver #1`,
+          nationality: 'UNK',
+          tier: 1,
+          rarity: 'common',
+          pace: 45 + Math.floor(Math.random() * 20), // 45-65
+          tireManagement: 45 + Math.floor(Math.random() * 20),
+          overtaking: 45 + Math.floor(Math.random() * 20),
+          defense: 45 + Math.floor(Math.random() * 20),
+          wetSkill: 45 + Math.floor(Math.random() * 20),
+          baseSalary: 500000,
+        },
+      });
+
+      const pilot2 = await tx.pilot.create({
+        data: {
+          name: `${createTeamDto.name} Driver #2`,
+          nationality: 'UNK',
+          tier: 1,
+          rarity: 'common',
+          pace: 45 + Math.floor(Math.random() * 20), // 45-65
+          tireManagement: 45 + Math.floor(Math.random() * 20),
+          overtaking: 45 + Math.floor(Math.random() * 20),
+          defense: 45 + Math.floor(Math.random() * 20),
+          wetSkill: 45 + Math.floor(Math.random() * 20),
+          baseSalary: 500000,
+        },
+      });
+
+      // Pilóták hozzáadása a csapathoz
+      const ownedPilot1 = await tx.ownedPilot.create({
+        data: {
+          teamId: team.id,
+          pilotId: pilot1.id,
+          isActive: true, // Első pilóta aktív
+        },
+      });
+
+      const ownedPilot2 = await tx.ownedPilot.create({
+        data: {
+          teamId: team.id,
+          pilotId: pilot2.id,
+          isActive: false, // Második pilóta tartalék
+        },
+      });
+
+      return { 
+        team, 
+        car, 
+        pilots: [pilot1, pilot2],
+        ownedPilots: [ownedPilot1, ownedPilot2]
+      };
     });
 
+    // Teljes csapat adatok visszaadása (pilótákkal együtt)
     return {
       id: result.team.id,
       name: result.team.name,
@@ -52,6 +108,24 @@ export class TeamService {
         chassis: result.car.chassis,
         reliability: result.car.reliability,
       },
+      ownedPilots: result.ownedPilots.map((op, index) => ({
+        id: op.id,
+        isActive: op.isActive,
+        acquiredAt: op.acquiredAt,
+        pilot: {
+          id: result.pilots[index].id,
+          name: result.pilots[index].name,
+          nationality: result.pilots[index].nationality,
+          tier: result.pilots[index].tier,
+          rarity: result.pilots[index].rarity,
+          pace: result.pilots[index].pace,
+          tireManagement: result.pilots[index].tireManagement,
+          overtaking: result.pilots[index].overtaking,
+          defense: result.pilots[index].defense,
+          wetSkill: result.pilots[index].wetSkill,
+          baseSalary: result.pilots[index].baseSalary,
+        },
+      })),
     };
   }
 

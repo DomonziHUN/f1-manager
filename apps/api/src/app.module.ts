@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { TeamModule } from './team/team.module';
 import { AuctionModule } from './auction/auction.module';
 import { PrismaService } from './prisma/prisma.service';
+import { RaceModule } from './race/race.module';
 // Ha használod az AppController-t, akkor importáld és tedd be a controllers tömbbe
 
 @Module({
@@ -14,6 +15,7 @@ import { PrismaService } from './prisma/prisma.service';
     AuthModule,
     TeamModule,
     AuctionModule,
+    RaceModule,  // ← ÚJ
   ],
   controllers: [], // ha megtartod az AppController-t: [AppController]
   providers: [PrismaService],
