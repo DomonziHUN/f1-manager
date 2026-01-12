@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: f1-manager-db
+    restart: always
+    environment:
+      POSTGRES_USER: f1admin
+      POSTGRES_PASSWORD: f1secret123
+      POSTGRES_DB: f1manager
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: f1-manager-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:

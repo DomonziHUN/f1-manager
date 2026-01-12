@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Team" ADD COLUMN     "primaryColor" TEXT NOT NULL DEFAULT '#E10600',
+ADD COLUMN     "secondaryColor" TEXT NOT NULL DEFAULT '#FFFFFF';

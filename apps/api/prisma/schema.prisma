@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Felhasználók (bővítés)
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  username        String   @unique
+  password        String
+  coins           Int      @default(50)           // ← ÚJ: prémium coin
+  emailVerified   Boolean  @default(false)
+  verificationToken String? @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  team            Team?
+  bids            Bid[]                          // ← ÚJ: licitálások
+}
+
+// Csapatok (bővítés)
+model Team {
+  id           String   @id @default(uuid())
+  name         String
+  budget       Int      @default(10000000)
+  primaryColor String   @default("#E10600")
+  secondaryColor String @default("#FFFFFF")
+  createdAt    DateTime @default(now())
+  
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  
+  car          Car?
+  pilots       Pilot[]
+  ownedPilots  OwnedPilot[]                     // ← ÚJ: tulajdonolt pilóták
+}
+
+model Car {
+  id          String @id @default(uuid())
+  engine      Int    @default(50)
+  aero        Int    @default(50)
+  chassis     Int    @default(50)
+  reliability Int    @default(50)
+  
+  teamId      String @unique
+  team        Team   @relation(fields: [teamId], references: [id])
+}
+
+// Pilóták (módosítás)
+model Pilot {
+  id             String @id @default(uuid())
+  name           String
+  nationality    String @default("UNK")         // ← ÚJ
+  tier           Int    @default(1)             // 1-5 tier
+  rarity         String @default("common")      // common, rare, epic, legendary
+  pace           Int    @default(50)
+  tireManagement Int    @default(50)
+  overtaking     Int    @default(50)
+  defense        Int    @default(50)
+  wetSkill       Int    @default(50)
+  baseSalary     Int    @default(500000)        // ← Átnevezve
+  
+  teamId         String?
+  team           Team?   @relation(fields: [teamId], references: [id])
+  
+  auctions       AuctionPilot[]                 // ← ÚJ: aukciókban való részvétel
+  ownedVersions  OwnedPilot[]                   // ← ÚJ: tulajdonolt verziók
+}
+// ÚJ: Tulajdonolt pilóták (user inventory)
+model OwnedPilot {
+  id        String   @id @default(uuid())
+  isActive  Boolean  @default(false)            // Aktív a csapatban?
+  acquiredAt DateTime @default(now())
+  
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id])
+  
+  pilotId   String
+  pilot     Pilot    @relation(fields: [pilotId], references: [id])
+  
+  @@unique([teamId, pilotId])                   // Egy csapat csak 1x birtokolhatja ugyanazt a pilótát
+}
+
+// ÚJ: Aukciók
+model Auction {
+  id          String   @id @default(uuid())
+  startTime   DateTime @default(now())
+  endTime     DateTime
+  isActive    Boolean  @default(true)
+  
+  pilots      AuctionPilot[]
+  bids        Bid[]
+  
+  createdAt   DateTime @default(now())
+}
+
+// ÚJ: Aukción lévő pilóták
+model AuctionPilot {
+  id          String @id @default(uuid())
+  startPrice  Int    @default(1000000)          // Kezdő ár
+  startCoins  Int    @default(1)                // Kezdő coin
+  
+  auctionId   String
+  auction     Auction @relation(fields: [auctionId], references: [id])
+  
+  pilotId     String
+  pilot       Pilot   @relation(fields: [pilotId], references: [id])
+  
+  bids        Bid[]
+  
+  @@unique([auctionId, pilotId])
+}
+
+// ÚJ: Licitálások
+model Bid {
+  id          String   @id @default(uuid())
+  amount      Int                                // Pénz összeg
+  coins       Int                                // Coin összeg
+  timestamp   DateTime @default(now())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  auctionId   String
+  auction     Auction  @relation(fields: [auctionId], references: [id])
+  
+  auctionPilotId String
+  auctionPilot   AuctionPilot @relation(fields: [auctionPilotId], references: [id])
+}
